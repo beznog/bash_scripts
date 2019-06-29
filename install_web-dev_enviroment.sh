@@ -155,7 +155,48 @@ if [ ! -f /etc/mysql/my.cnf.orig ]; then
 fi
 
 
+# Installing Laravel
+printf $DIVIDER
+printf "Installing Laravel\n"
+printf $DIVIDER
 
+# Confirm Laravel Installation
+while true; do
+	read -p "Install Laravel [Y/N]? " cnt1
+	case $cnt1 in
+		[Yy]* )
+			# Installing auxiliary packets
+			printf "Installing auxiliary packets before Laravel Installation\n"
+			add-apt-repository -y ppa:ondrej/php
+			apt-get update
+			apt install -y git curl wget zip unzip
+			apt install -y apache2
+			apt install -y mysql-server
+			apt install -y php php-fpm libapache2-mod-php php-cli php-curl php-mysql php-sqlite3 php-gd php-xml php-mcrypt php-mbstring php-iconv
+
+
+			# Configure SWAP File
+			printf "Configure Linux SWAP File\n"
+			sudo /bin/dd if=/dev/zero of=/var/swap.1 bs=1M count=1024
+			sudo /sbin/mkswap /var/swap.1
+			sudo /sbin/swapon /var/swap.1
+
+			# Downloading Composer
+			printf "Downloading Composer\n"
+			su -c "cd ~ && curl -sS https://getcomposer.org/installer | php" $dev_user
+			# Copying exec to /usr/bin/
+			printf "Copying exec to /usr/bin/\n"
+			mv composer.phar /usr/local/bin/composer
+			ln /usr/local/bin/composer /usr/bin/composer
+			# Installing Composer
+			printf "Installing Composer\n"
+			su -c "composer install" $dev_user
+			break
+			;;
+		[Nn]* ) break;;
+		* ) printf "Please answer Y or N\n";;
+	esac
+done
 
 
 
@@ -177,6 +218,19 @@ while true; do
 				esac
 			done
 			
+			# Create directories
+			printf "Directories for site\n"
+			while true; do
+				read -p "Please enter the directory path for files (e.g. ~/projects): " project_directory
+				case $project_directory in
+					"" ) printf "Project directory may not be left blank\n";;
+					* ) break;;
+				esac
+			done
+			mkdir -p $project_directory/$domain
+			mkdir -p $project_directory/$domain/logs
+			ln -s $project_directory/$domain /var/www
+			chown -R $dev_user:$dev_user $project_directory
 
 			# Backup previous virtual host files
 			if [ -f /etc/apache2/sites-available/$domain.conf ]; then
@@ -190,16 +244,32 @@ while true; do
 			printf "$VIRTUALHOST" > /etc/apache2/sites-available/$domain.conf
 			printf "127.0.0.1 $domain\n" >> /etc/hosts;
 
-			# Create directories
-			printf "Directories for site\n"
-			read -p "Please enter the directory path for files (e.g. ~/projects): " project_directory
-			mkdir -p $project_directory/$domain
-			mkdir -p $project_directory/$domain/logs
-			#mkdir -p /var/www/$domain
-			ln -s $project_directory/$domain /var/www
-			printf "<?php phpinfo();?>" > $project_directory/$domain/info.php;
 
-			chown -R $dev_user:$dev_user $project_directory
+			# Create Laravel Project
+			while true; do
+				read -p "Create Laravel Project [Y/N]? " cnt1
+				case $cnt1 in
+					[Yy]* ) 
+						cd $project_directory/$domain
+						# Creating Laravel Project
+						printf "Creating Laravel Project\n"
+						su -c "composer create-project --prefer-dist laravel/laravel $domain" $dev_user
+						#chown -R www-data:www-data /var/www/html/$LARAVEL_PROJECT_NAME
+
+						# Edit file permissions
+						printf "Edit file permissions\n"
+						find /var/www/html/$LARAVEL_PROJECT_NAME -type d -exec chmod 2775 {} \;
+						find /var/www/html/$LARAVEL_PROJECT_NAME -type f -exec chmod 0664 {} \;
+						break
+						;;
+					[Nn]* ) 
+						printf "<?php phpinfo();?>" > $project_directory/$domain/info.php;
+						break
+						;;
+					* ) printf "Please answer Y or N\n";;
+				esac
+			done
+
 			
 
 			# Enable site
