@@ -188,10 +188,6 @@ while true; do
 			printf "Copying exec to /usr/bin/\n"
 			mv composer.phar /usr/local/bin/composer
 			ln /usr/local/bin/composer /usr/bin/composer
-			# Installing Composer
-			printf "Installing Composer\n"
-			su -c "composer install" $dev_user
-			break
 			;;
 		[Nn]* ) break;;
 		* ) printf "Please answer Y or N\n";;
@@ -251,6 +247,10 @@ while true; do
 				case $cnt1 in
 					[Yy]* ) 
 						cd $project_directory/$domain
+						# Installing Composer
+						printf "Installing Composer\n"
+						su -c "composer install" $dev_user
+						break
 						# Creating Laravel Project
 						printf "Creating Laravel Project\n"
 						su -c "composer create-project --prefer-dist laravel/laravel $domain" $dev_user
@@ -258,8 +258,8 @@ while true; do
 
 						# Edit file permissions
 						printf "Edit file permissions\n"
-						find /var/www/html/$LARAVEL_PROJECT_NAME -type d -exec chmod 2775 {} \;
-						find /var/www/html/$LARAVEL_PROJECT_NAME -type f -exec chmod 0664 {} \;
+						find $project_directory/$domain -type d -exec chmod 2775 {} \;
+						find $project_directory/$domain -type f -exec chmod 0664 {} \;
 						break
 						;;
 					[Nn]* ) 
@@ -286,7 +286,6 @@ while true; do
 					1 ) 
 						#read -p "Enter distenation directory path (e.g. $HOME/projects/project_name)" dist_dir
 						read -p "Enter Git Repository URL: " git_url
-						read -p "Enter web-dev username: " dev_user
 						cd $project_directory/$domain
 						su -c "git init" $dev_user
 						su -c "git pull --rebase $git_url master" $dev_user

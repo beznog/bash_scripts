@@ -23,9 +23,10 @@ sudo /sbin/mkswap /var/swap.1
 sudo /sbin/swapon /var/swap.1
 
 
-su $USERNAME -c 'cd ~ && curl -sS https://getcomposer.org/installer | php'
-sudo mv composer.phar /usr/local/bin/composer
-sudo ln -s /usr/local/bin/composer /usr/bin/composer
+su $USERNAME -c 'cd ~ && curl -sS https://getcomposer.org/installer -o composer-setup.php'
+php composer-setup.php --install-dir=/usr/local/bin --filename=composer
+rm -rf composer-setup.php
+ln /usr/local/bin/composer /usr/bin/composer
 su $USERNAME -c 'composer install'
 
 cd /var/www/html
