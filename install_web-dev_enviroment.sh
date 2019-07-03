@@ -9,6 +9,7 @@ fi
 DIVIDER="\n***************************************\n\n"
 
 dev_user=$SUDO_USER
+PHP_VERSION=7.1
 
 # Welcome and instructions
 printf $DIVIDER
@@ -172,8 +173,7 @@ while true; do
 			apt install -y git curl wget zip unzip
 			apt install -y apache2
 			apt install -y mysql-server
-			apt install -y php php-fpm libapache2-mod-php php-cli php-curl php-mysql php-sqlite3 php-gd php-xml php-mcrypt php-mbstring php-iconv
-
+			apt install -y php$PHP_VERSION php$PHP_VERSION-fpm libapache2-mod-php$PHP_VERSION php$PHP_VERSION-cli php$PHP_VERSION-curl php$PHP_VERSION-mysql php$PHP_VERSION-sqlite3 php$PHP_VERSION-gd php$PHP_VERSION-xml php$PHP_VERSION-mcrypt php$PHP_VERSION-mbstring php$PHP_VERSION-iconv
 
 			# Configure SWAP File
 			printf "Configure Linux SWAP File\n"
@@ -183,11 +183,12 @@ while true; do
 
 			# Downloading Composer
 			printf "Downloading Composer\n"
-			su -c "cd ~ && curl -sS https://getcomposer.org/installer | php" $dev_user
-			# Copying exec to /usr/bin/
-			printf "Copying exec to /usr/bin/\n"
-			mv composer.phar /usr/local/bin/composer
+			cd /home/$dev_user/
+			curl -sS https://getcomposer.org/installer -o composer-setup.php
+			php composer-setup.php --install-dir=/usr/local/bin --filename=composer
+			rm -rf composer-setup.php
 			ln /usr/local/bin/composer /usr/bin/composer
+			su $dev_user -c 'composer install'
 			;;
 		[Nn]* ) break;;
 		* ) printf "Please answer Y or N\n";;
