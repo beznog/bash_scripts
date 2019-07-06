@@ -188,7 +188,8 @@ while true; do
 			php composer-setup.php --install-dir=/usr/local/bin --filename=composer
 			rm -rf composer-setup.php
 			ln /usr/local/bin/composer /usr/bin/composer
-			su $dev_user -c 'composer install'
+			#su $dev_user -c 'composer install'
+			break
 			;;
 		[Nn]* ) break;;
 		* ) printf "Please answer Y or N\n";;
@@ -218,7 +219,7 @@ while true; do
 			# Create directories
 			printf "Directories for site\n"
 			while true; do
-				read -p "Please enter the directory path for files (e.g. ~/projects): " project_directory
+				read -p "Please enter the directory path for files (e.g. /home/$dev_user/projects): " project_directory
 				case $project_directory in
 					"" ) printf "Project directory may not be left blank\n";;
 					* ) break;;
@@ -247,14 +248,11 @@ while true; do
 				read -p "Create Laravel Project [Y/N]? " cnt1
 				case $cnt1 in
 					[Yy]* ) 
+						create_laravel_project=TRUE
 						cd $project_directory/$domain
-						# Installing Composer
-						printf "Installing Composer\n"
-						su -c "composer install" $dev_user
-						break
 						# Creating Laravel Project
-						printf "Creating Laravel Project\n"
-						su -c "composer create-project --prefer-dist laravel/laravel $domain" $dev_user
+						#printf "Creating Laravel Project\n"
+						#su -c "composer create-project --prefer-dist laravel/laravel $domain" $dev_user
 						#chown -R www-data:www-data /var/www/html/$LARAVEL_PROJECT_NAME
 
 						# Edit file permissions
@@ -264,7 +262,7 @@ while true; do
 						break
 						;;
 					[Nn]* ) 
-						printf "<?php phpinfo();?>" > $project_directory/$domain/info.php;
+						#printf "<?php phpinfo();?>" > $project_directory/$domain/info.php;
 						break
 						;;
 					* ) printf "Please answer Y or N\n";;
@@ -290,6 +288,14 @@ while true; do
 						cd $project_directory/$domain
 						su -c "git init" $dev_user
 						su -c "git pull --rebase $git_url master" $dev_user
+
+						if [ $create_laravel_project ]
+						then
+							# Installing Composer
+							printf "Installing Composer\n"
+							su -c "composer install" $dev_user
+							$create_laravel_project=FALSE
+						fi
 						break;;
 					* ) printf "Please answer a number (0-2)\n";;
 				esac
