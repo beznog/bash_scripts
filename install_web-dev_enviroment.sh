@@ -9,6 +9,7 @@ fi
 DIVIDER="\n***************************************\n\n"
 
 dev_user=$SUDO_USER
+PHP_VERSION=7.1
 
 # Welcome and instructions
 printf $DIVIDER
@@ -172,8 +173,7 @@ while true; do
 			apt install -y git curl wget zip unzip
 			apt install -y apache2
 			apt install -y mysql-server
-			apt install -y php php-fpm libapache2-mod-php php-cli php-curl php-mysql php-sqlite3 php-gd php-xml php-mcrypt php-mbstring php-iconv
-
+			apt install -y php$PHP_VERSION php$PHP_VERSION-fpm libapache2-mod-php$PHP_VERSION php$PHP_VERSION-cli php$PHP_VERSION-curl php$PHP_VERSION-mysql php$PHP_VERSION-sqlite3 php$PHP_VERSION-gd php$PHP_VERSION-xml php$PHP_VERSION-mcrypt php$PHP_VERSION-mbstring php$PHP_VERSION-iconv
 
 			# Configure SWAP File
 			printf "Configure Linux SWAP File\n"
@@ -183,14 +183,12 @@ while true; do
 
 			# Downloading Composer
 			printf "Downloading Composer\n"
-			su -c "cd ~ && curl -sS https://getcomposer.org/installer | php" $dev_user
-			# Copying exec to /usr/bin/
-			printf "Copying exec to /usr/bin/\n"
-			mv composer.phar /usr/local/bin/composer
+			cd /home/$dev_user/
+			curl -sS https://getcomposer.org/installer -o composer-setup.php
+			php composer-setup.php --install-dir=/usr/local/bin --filename=composer
+			rm -rf composer-setup.php
 			ln /usr/local/bin/composer /usr/bin/composer
-			# Installing Composer
-			printf "Installing Composer\n"
-			su -c "composer install" $dev_user
+			#su $dev_user -c 'composer install'
 			break
 			;;
 		[Nn]* ) break;;
@@ -221,7 +219,7 @@ while true; do
 			# Create directories
 			printf "Directories for site\n"
 			while true; do
-				read -p "Please enter the directory path for files (e.g. ~/projects): " project_directory
+				read -p "Please enter the directory path for files (e.g. /home/$dev_user/projects): " project_directory
 				case $project_directory in
 					"" ) printf "Project directory may not be left blank\n";;
 					* ) break;;
@@ -250,20 +248,21 @@ while true; do
 				read -p "Create Laravel Project [Y/N]? " cnt1
 				case $cnt1 in
 					[Yy]* ) 
+						create_laravel_project=TRUE
 						cd $project_directory/$domain
 						# Creating Laravel Project
-						printf "Creating Laravel Project\n"
-						su -c "composer create-project --prefer-dist laravel/laravel $domain" $dev_user
+						#printf "Creating Laravel Project\n"
+						#su -c "composer create-project --prefer-dist laravel/laravel $domain" $dev_user
 						#chown -R www-data:www-data /var/www/html/$LARAVEL_PROJECT_NAME
 
 						# Edit file permissions
 						printf "Edit file permissions\n"
-						find /var/www/html/$LARAVEL_PROJECT_NAME -type d -exec chmod 2775 {} \;
-						find /var/www/html/$LARAVEL_PROJECT_NAME -type f -exec chmod 0664 {} \;
+						find $project_directory/$domain -type d -exec chmod 2775 {} \;
+						find $project_directory/$domain -type f -exec chmod 0664 {} \;
 						break
 						;;
 					[Nn]* ) 
-						printf "<?php phpinfo();?>" > $project_directory/$domain/info.php;
+						#printf "<?php phpinfo();?>" > $project_directory/$domain/info.php;
 						break
 						;;
 					* ) printf "Please answer Y or N\n";;
@@ -286,10 +285,17 @@ while true; do
 					1 ) 
 						#read -p "Enter distenation directory path (e.g. $HOME/projects/project_name)" dist_dir
 						read -p "Enter Git Repository URL: " git_url
-						read -p "Enter web-dev username: " dev_user
 						cd $project_directory/$domain
 						su -c "git init" $dev_user
 						su -c "git pull --rebase $git_url master" $dev_user
+
+						if [ $create_laravel_project ]
+						then
+							# Installing Composer
+							printf "Installing Composer\n"
+							su -c "composer install" $dev_user
+							$create_laravel_project=FALSE
+						fi
 						break;;
 					* ) printf "Please answer a number (0-2)\n";;
 				esac
