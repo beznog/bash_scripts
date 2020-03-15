@@ -136,7 +136,7 @@ while true; do
 	case $cnt1 in
 		[Yy]* )
 			# Download and Installing IntelliJ IDEA
-			su -c "cd ~/Downloads" $dev_user
+			cd /home/$dev_user/Downloads
 			printf "Downloading IntelliJ IDEA\n"
 			su -c "wget https://download.jetbrains.com/idea/ideaIC-2019.3.3.tar.gz" $dev_user
 			printf "Extracting files\n"
