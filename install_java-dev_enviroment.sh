@@ -87,7 +87,7 @@ while true; do
 			apt install libopencv-dev
 			apt install libtesseract-dev
 
-			: <<'END'
+			if [ ]; then
 			# BEGIN OF COMMENT BLOCK
 # Installing openCV 4.1.1
 			printf "Installing openCV 4.1.1\n"
@@ -113,7 +113,7 @@ while true; do
 			rm ${OPENCV_VERSION}.zip
 			rm -r opencv-${OPENCV_VERSION}
 			# END OF COMMENT BLOCK
-			END
+			fi
 
 			# Linking OpenCV
 			sudo ln -s /usr/lib/jni/libopencv_java320.so /usr/lib/libopencv_java.so
