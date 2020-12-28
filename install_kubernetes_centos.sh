@@ -9,9 +9,10 @@ worker_init_command=$4
 #Variables
 master_name="master-node"
 worker_name_1="node-1"
-worker_name_2="worker_node_1"
+worker_name_2="worker-node-1"
 
 #Update Yum Packeges
+printf "##### Updating Yum Packages #####\n"
 yum update
 
 #Install and Start Docker
@@ -47,6 +48,16 @@ firewall-cmd --permanent --add-port=10252/tcp
 firewall-cmd --permanent --add-port=10255/tcp
 firewall-cmd --reload
 
+#Deactivate Firewall
+printf "##### Deactivatind Firewall #####\n"
+systemctl stop firewalld
+systemctl disable firewalld
+
+#Clear Iptables
+printf "##### Clearing Iptables #####\n"
+iptables --flush
+iptables -tnat --flush
+
 #Firewall modules reload
 printf "##### Enabling Firewalls Modules #####\n"
 modprobe br_netfilter
@@ -66,8 +77,9 @@ fi
 
 if [ $master_ip ]; then
 	printf "##### Add Master hostname to /etc/hosts #####\n"
-	echo "$master_ip $mster_name" >> /etc/hosts
-elif [ $worker_ip ]; then
+	echo "$master_ip $master_name" >> /etc/hosts
+fi
+if [ $worker_ip ]; then
 	printf "##### Add Worker hostname to /etc/hosts #####\n"
 	echo "$worker_ip $worker_name_1 $worker_name_2" >> /etc/hosts
 else
@@ -83,19 +95,23 @@ systemctl start kubelet
 #Disable SWAP:
 printf "##### Disabling SWAP #####\n"
 swapoff -a
-$FIND="/dev/mapper/centos-swap swap swap defaults 0 0"
-$REPLACE="#$FIND"
+FIND="\/dev\/mapper\/centos-swap"
+REPLACE="#$FIND"
 sed -i "0,/$FIND/s/$FIND/$REPLACE/m" /etc/fstab
+#sed -i "0,/\/dev\/mapper\/centos-swap/s/\\/dev\/mapper\/centos-swap/#\/dev\/mapper\/centos-swap/m" /etc/fstab
+
 
 printf "##### Kubernetes Initialization #####\n"
 if [ $role = "master" ]; then
 	printf "##### Master-node Init #####\n"
-	kubeadm init --pod-network-cidr=10.244.0.0/16
+	kubeadm init --pod-network-cidr=10.244.0.0/16 > kubernetes_init_output.txt
 	mkdir -p $HOME/.kube
 	cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
 	chown $(id -u):$(id -g) $HOME/.kube/config
 	kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml
-elif [$role = worker]; then
+elif [ $role = "worker" ]; then
 	printf "##### Worker-node Init #####\n"
 	bash $worker_init_command
 fi
+
+reboot
